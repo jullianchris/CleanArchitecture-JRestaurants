@@ -1,5 +1,9 @@
+using JRestaurant.Application;
+using JRestaurant.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 {
+    builder.Services.AddApplication().AddInfrastructure();
     builder.Services.AddControllers();
 }
 
