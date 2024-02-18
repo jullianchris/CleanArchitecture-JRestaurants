@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using JRestaurant.Application.Common.Interfaces.Authentication;
 using JRestaurant.Application.Common.Interfaces.Services;
+using JRestaurant.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -21,7 +22,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _jwtSettings = jwtOptions.Value;
     }
 
-    public string GenerateToken(Guid userId, string firstName, string lastName)
+    public string GenerateToken(User user)
     {
         var siginingCredentials = new SigningCredentials(
                                     new SymmetricSecurityKey(
@@ -29,10 +30,10 @@ public class JwtTokenGenerator : IJwtTokenGenerator
                                     ), SecurityAlgorithms.HmacSha256);
 
         var claims = new[]{
-            new Claim(JwtRegisteredClaimNames.Sub,userId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub,user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.GivenName,firstName),
-              new Claim(JwtRegisteredClaimNames.FamilyName,lastName),
+            new Claim(JwtRegisteredClaimNames.GivenName,user.FirstName),
+            new Claim(JwtRegisteredClaimNames.FamilyName,user.LastName),
         };
 
         var securityToken = new JwtSecurityToken(
