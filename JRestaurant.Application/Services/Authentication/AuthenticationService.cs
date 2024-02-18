@@ -1,5 +1,9 @@
+using ErrorOr;
+using FluentResults;
+using JRestaurant.Application.Common.Errors;
 using JRestaurant.Application.Common.Interfaces.Authentication;
 using JRestaurant.Application.Common.Interfaces.Persistence;
+using JRestaurant.Domain.Common.Errors;
 using JRestaurant.Domain.Entities;
 
 namespace JRestaurant.Application.Services.Authentication;
@@ -15,18 +19,17 @@ public class AuthenticationService : IAuthenticationService
         _userRepository = userRepository;
     }
 
-
-    public AuthenticationResult Login(string email, string password)
+    public ErrorOr<AuthenticationResult> Login(string email, string password)
     {
         // validate user
         if (_userRepository.GetUserByEmail(email) is not User user)
         {
-            throw new Exception("User with given email already exists.");
+            return Errors.Authentication.InvalidCredentials;
         }
 
         if (user.Password != password)
         {
-            throw new Exception("Invalid password.");
+            return Errors.Authentication.InvalidCredentials;
         }
 
         var token = _jwtTokenGenerator.GenerateToken(user);
@@ -38,12 +41,12 @@ public class AuthenticationService : IAuthenticationService
                 );
     }
 
-    public AuthenticationResult Register(string firstName, string lastName, string email, string password)
+    public Result<AuthenticationResult> Register(string firstName, string lastName, string email, string password)
     {
         // validate user
         if (_userRepository.GetUserByEmail(email) is not null)
         {
-            throw new Exception("User with given email already exists.");
+            return FluentResults.Result.Fail<AuthenticationResult>(new[] { new DuplicateEmailError() });
         }
 
         // create new user
