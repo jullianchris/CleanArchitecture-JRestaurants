@@ -21,6 +21,8 @@ namespace JRestaurant.Application.Authentication.Commands.Queries.Login
 
         public async Task<ErrorOr<AuthenticationResult>> Handle(LoginQuery query, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
+
             // validate user
             if (_userRepository.GetUserByEmail(query.Email) is not User user)
             {
