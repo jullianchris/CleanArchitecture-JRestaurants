@@ -1,6 +1,6 @@
 using System.Reflection;
-using JRestaurant.Application.Services.Authentication.Commands;
-using JRestaurant.Application.Services.Authentication.Queries;
+using FluentValidation;
+using JRestaurant.Application.Common.Behaviors;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +14,10 @@ public static class DependencyInjection
         // services.AddScoped<IAuthenticationQueryService, AuthenticationQueryService>();
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         return services;
     }
 }
