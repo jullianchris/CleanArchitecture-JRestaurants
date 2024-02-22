@@ -3,17 +3,18 @@ using FluentResults;
 using JRestaurant.Application.Common.Errors;
 using JRestaurant.Application.Common.Interfaces.Authentication;
 using JRestaurant.Application.Common.Interfaces.Persistence;
+using JRestaurant.Application.Services.Authentication.Common;
 using JRestaurant.Domain.Common.Errors;
 using JRestaurant.Domain.Entities;
 
-namespace JRestaurant.Application.Services.Authentication;
+namespace JRestaurant.Application.Services.Authentication.Queries;
 
-public class AuthenticationService : IAuthenticationService
+public class AuthenticationQueryService : IAuthenticationQueryService
 {
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IUserRepository _userRepository;
 
-    public AuthenticationService(IJwtTokenGenerator jwtTokenGenerator, IUserRepository userRepository)
+    public AuthenticationQueryService(IJwtTokenGenerator jwtTokenGenerator, IUserRepository userRepository)
     {
         _jwtTokenGenerator = jwtTokenGenerator;
         _userRepository = userRepository;
@@ -41,29 +42,4 @@ public class AuthenticationService : IAuthenticationService
                 );
     }
 
-    public Result<AuthenticationResult> Register(string firstName, string lastName, string email, string password)
-    {
-        // validate user
-        if (_userRepository.GetUserByEmail(email) is not null)
-        {
-            return FluentResults.Result.Fail<AuthenticationResult>(new[] { new DuplicateEmailError() });
-        }
-
-        // create new user
-        var user = new User
-        {
-            FirstName = firstName,
-            LastName = lastName,
-            Email = email,
-            Password = password
-        };
-
-        _userRepository.Add(user);
-        var token = _jwtTokenGenerator.GenerateToken(user);
-
-        return new AuthenticationResult(
-            user,
-            token
-        );
-    }
 }

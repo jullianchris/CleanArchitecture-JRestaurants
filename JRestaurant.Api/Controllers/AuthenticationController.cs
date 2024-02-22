@@ -1,10 +1,10 @@
 using ErrorOr;
-using FluentResults;
-using JRestaurant.Application.Common.Errors;
-using JRestaurant.Application.Services.Authentication;
+using JRestaurant.Application.Authentication.Commands.Queries.Login;
+using JRestaurant.Application.Authentication.Commands.Register;
+using JRestaurant.Application.Services.Authentication.Common;
 using JRestaurant.Contracts.Authentication;
 using JRestaurant.Domain.Common.Errors;
-using Microsoft.AspNetCore.Http.Timeouts;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JRestaurant.Api.Controllers;
@@ -12,33 +12,23 @@ namespace JRestaurant.Api.Controllers;
 [Route("auth")]
 public class AuthenticationController : ApiController
 {
-    private readonly IAuthenticationService _authService;
+    private readonly ISender mediator;
 
-    public AuthenticationController(IAuthenticationService authService)
+    public AuthenticationController(ISender mediator)
     {
-        _authService = authService;
+        this.mediator = mediator;
     }
 
     [HttpPost("register")]
-    public IActionResult Register(RegisterRequest request)
+    public async Task<IActionResult> Register(RegisterRequest request)
     {
-        Result<AuthenticationResult> authRequest = _authService.Register(
-            request.FirstName,
-            request.LastName,
-            request.Email,
-            request.Password
-        );
+        var command = new RegisterCommand(request.FirstName, request.LastName, request.Email, request.Password);
+        ErrorOr<AuthenticationResult> authRequest = await mediator.Send(command);
 
-        if (authRequest.IsSuccess)
-        {
-            return Ok(MapAuthResult(authRequest.Value));
-        }
-
-        var firstError = authRequest.Errors[0];
-        if (firstError is DuplicateEmailError)
-            return Problem(statusCode: StatusCodes.Status409Conflict, detail: "Email already exists");
-
-        return Problem();
+        return authRequest.Match(
+                 authResult => Ok(MapAuthResult(authResult)),
+                 errors => Problem(errors)
+             );
     }
 
     private AuthenticationResponse MapAuthResult(AuthenticationResult value)
@@ -54,17 +44,18 @@ public class AuthenticationController : ApiController
     }
 
     [HttpPost("login")]
-    public IActionResult Login(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest request)
     {
-        ErrorOr<AuthenticationResult> authResult = _authService.Login(request.Email, request.Password);
+        var query = new LoginQuery(request.Email, request.Password);
+        ErrorOr<AuthenticationResult> authResult = await mediator.Send(query);
 
         if (authResult.IsError && authResult.FirstError == Errors.Authentication.InvalidCredentials)
             return Problem(statusCode: StatusCodes.Status401Unauthorized, title: authResult.FirstError.Description);
 
         return authResult.Match(
-            authResult => Ok(MapAuthResult(authResult)),
-            Errors => Problem(Errors)
-        );
+                 authResult => Ok(MapAuthResult(authResult)),
+                 errors => Problem(errors)
+             );
     }
 
 
