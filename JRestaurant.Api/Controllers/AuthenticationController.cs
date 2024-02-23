@@ -6,11 +6,13 @@ using JRestaurant.Contracts.Authentication;
 using JRestaurant.Domain.Common.Errors;
 using MapsterMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JRestaurant.Api.Controllers;
 
 [Route("auth")]
+[AllowAnonymous]
 public class AuthenticationController : ApiController
 {
     private readonly ISender _mediator;
